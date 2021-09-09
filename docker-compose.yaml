@@ -1,0 +1,67 @@
+version: '3'
+
+# https://ridwanfajar.medium.com/send-your-container-logs-to-elk-elasticsearch-logstash-and-kibana-with-gelf-driver-7995714fbbad
+
+services:
+
+  app:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    links:
+      - redis:redis
+    depends_on:
+      - redis
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "demo2_app"
+
+
+  redis:
+    image: "redis:alpine"
+    expose:
+      - "6379"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "demo2_redis"
+
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
+    environment:
+      - discovery.type=single-node
+    ports:
+      - 9200:9200
+
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.2
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+      - logstash
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "demo2_kibana"
+
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.6.2
+    links:
+      - elasticsearch
+    volumes:
+      - .:/etc/logstash
+    command: logstash -f /etc/logstash/logstash.conf
+    ports:
+      - 12201:12201/udp
+    depends_on:
+      - elasticsearch
