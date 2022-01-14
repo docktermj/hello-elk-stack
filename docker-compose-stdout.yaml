@@ -1,0 +1,48 @@
+version: '3'
+
+# https://ridwanfajar.medium.com/send-your-container-logs-to-elk-elasticsearch-logstash-and-kibana-with-gelf-driver-7995714fbbad
+
+services:
+
+  logstash:
+    command:
+      - --config.string
+      - >-
+        input {
+          gelf {
+            port => 12201
+          }
+        }
+
+        output {
+          stdout {}
+        }
+    container_name: logstash
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    image: logstash:7.16.3
+    networks:
+      - elk
+    ports:
+      - 9600:9600
+      - 12201:12201/udp
+    restart: always
+
+  logger_1:
+    container_name: logger-001
+    environment:
+      APPLICATION_ID: logger-001
+    depends_on:
+      - logstash
+    image: dockter/mock-logging
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:12201"
+        tag: "logger-001"
+    networks:
+      - elk
+    restart: always
+
+networks:
+  elk:
