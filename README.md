@@ -73,3 +73,34 @@ Perform one of the following commands to set `GIT_REPOSITORY_URL`.
     cd ${GIT_REPOSITORY_DIR}
     docker-compose up
     ```
+
+## Test
+
+### Logstash
+
+1. Test if messages are in logstash using
+   [Node Stats API](https://www.elastic.co/guide/en/logstash/current/node-stats-api.html).
+
+    ```console
+    curl -X GET 'localhost:9600/_node/stats/events?pretty'
+    ```
+
+   Look at the `events.in` and `events.out` numbers.
+
+### Elasticsearch
+
+1. Test if messages are in elasticsearch using
+   [cat indices API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cat-indices.html).
+
+    ```console
+    curl -X GET localhost:9200/_cat/indices?v=true
+    ```
+
+    View `docs.count` column.
+
+### Kibana
+
+1. Test if messages are in Kibana using
+   [Index Management](http://localhost:5601/app/management/data/index_management/indices).
+
+    - View "Docs count" column.
